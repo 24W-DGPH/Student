@@ -14,7 +14,6 @@ pacman::p_load(
   janitor, # data cleaning and tables
   lubridate, # working with dates
   matchmaker, # dictionary-based cleaning
-  epikit, # age_categories() function
   tidyverse, # data management and visualization
   #
   styler, # source code formatting
@@ -23,12 +22,9 @@ pacman::p_load(
   skimr, # preview tibbles (aka data frames)
   todor, # add TODO comments to your project)
   
-  
-  # Working with Dates
-  lubridate, # general package for handling and converting dates
-  parsedate, # has function to "guess" messy dates
-  aweek, # another option for converting dates to weeks, and weeks to dates
-  zoo # additional date/time functions)
+  #Table Visualization
+  flextable,      # make HTML tables 
+  officer        # helper functions for tables
 )
 
 # Import Data ---------------------------
@@ -59,9 +55,9 @@ hosp_admi <- hosp_admi %>%
   
   janitor::clean_names()
 
-# Convert the columns to numeric and sum them
+# Convert the columns to numeric, round them up, and calculate sums
 hosp_admi <- hosp_admi %>%
-  mutate(across(16:39, ~ as.numeric(as.character(.)))) %>% # Ensure numeric for columns 16 to 39
+  mutate(across(2:44, ~ suppressWarnings(ceiling(as.numeric(as.character(.)))))) %>% # Ensure numeric and round up for columns 2 to 44
   mutate(
     Age_0_9 = rowSums(across(16:18), na.rm = TRUE),
     Age_10_19 = rowSums(across(19:24), na.rm = TRUE),
@@ -75,5 +71,13 @@ hosp_admi <- hosp_admi %>%
   ) %>%
   select(-c(16:39)) # Remove original columns
 
-hosp_admi <- hosp_admi[, !grepl("media|mean", colnames(hosp_admi), ignore.case = TRUE)]
-# Remove columns containing "media" or "mean" in their names
+hosp_admi
+
+#Visualize Table ----------------------
+
+table_gender <- hosp_admi %>%
+  group_by(primary_diagnosis, male, female, gender_unknown) %>%
+  summarise()
+
+
+   
