@@ -1,0 +1,13 @@
+name: MF-GPH
+title: MF-GPH
+username: marcosf
+account: marcosf
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13839098
+bundleId: 9717325
+url: https://marcosf.shinyapps.io/MF-GPH/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|.Rprofile|clear.R|index.html|linelist.R|linelist_raw.xlsx

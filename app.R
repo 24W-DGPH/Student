@@ -28,6 +28,7 @@ pacman::p_load(
 source("clean.R")
 source("visualize.R")
 
+
 # UI for Shiny Application
 ui <- fluidPage(
   titlePanel("Hospital Admission Data"),
@@ -43,12 +44,23 @@ ui <- fluidPage(
       ),
       
       sliderInput(
-        "age_group_slider", 
-        "Select Age Group Range:", 
+        "age_group_slider_1", 
+        "Select First Age Group Range:", 
         min = 0, 
         max = 90, 
-        value = c(0, 90), 
-        step = 10, 
+        value = c(0, 45), 
+        step = 5, 
+        round = TRUE,
+        animate = TRUE
+      ),
+      
+      sliderInput(
+        "age_group_slider_2", 
+        "Select Second Age Group Range:", 
+        min = 0, 
+        max = 90, 
+        value = c(46, 90), 
+        step = 5, 
         round = TRUE,
         animate = TRUE
       ),
@@ -68,7 +80,9 @@ ui <- fluidPage(
         tabPanel("Gender Distribution by Primary Diagnosis", 
                  plotOutput("gender_plot")),
         tabPanel("Combined Scatter Plot",
-                 plotOutput("combined_plot"))
+                 plotOutput("combined_plot")),
+        tabPanel("Age Table", htmlOutput("age_table")),
+        tabPanel("Gender Table", htmlOutput("gender_table"))
       )
     )
   )
@@ -82,7 +96,7 @@ server <- function(input, output) {
       filter(primary_diagnosis == input$primary_diagnosis)
   })
   
-  # Render age plot
+  # Render age plot with two sliders
   output$age_plot <- renderPlot({
     plot_data <- filtered_data() %>%
       select(primary_diagnosis, starts_with("Age_")) %>%
@@ -91,7 +105,9 @@ server <- function(input, output) {
         Age_Group_Num = as.integer(gsub("Age_(\\d+)_\\d+", "\\1", Age_Group))
       ) %>%
       filter(
-        !is.na(Age_Group_Num) & Age_Group_Num >= input$age_group_slider[1] & Age_Group_Num <= input$age_group_slider[2]
+        !is.na(Age_Group_Num) & 
+          ((Age_Group_Num >= input$age_group_slider_1[1] & Age_Group_Num <= input$age_group_slider_1[2]) |
+             (Age_Group_Num >= input$age_group_slider_2[1] & Age_Group_Num <= input$age_group_slider_2[2]))
       )
     
     ggplot(plot_data, aes(x = Age_Group, y = Count, fill = Age_Group)) +
@@ -144,7 +160,9 @@ server <- function(input, output) {
       pivot_longer(cols = c(male, female, gender_unknown), names_to = "Gender", values_to = "Gender_Count") %>%
       mutate(Age_Group_Num = as.integer(gsub("Age_(\\d+)_\\d+", "\\1", Age_Group))) %>%
       filter(
-        !is.na(Age_Group_Num) & Age_Group_Num >= input$age_group_slider[1] & Age_Group_Num <= input$age_group_slider[2]
+        !is.na(Age_Group_Num) & 
+          ((Age_Group_Num >= input$age_group_slider_1[1] & Age_Group_Num <= input$age_group_slider_1[2]) |
+             (Age_Group_Num >= input$age_group_slider_2[1] & Age_Group_Num <= input$age_group_slider_2[2]))
       ) %>%
       filter(
         (input$gender_filter == "All") |
@@ -168,6 +186,46 @@ server <- function(input, output) {
       scale_color_manual(values = gender_colors) +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  })
+  
+  # Render age table
+  output$age_table <- renderUI({
+    table_age_for_kable %>%
+      kable(
+        format = "html",
+        caption = "Age Distribution by Primary Diagnosis"
+      ) %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+        full_width = FALSE
+      ) %>%
+      row_spec(0, bold = TRUE, color = "white", background = "#ADD8E6", extra_css = "border: 1px solid black;") %>%
+      row_spec(1, extra_css = "border-top: 1px solid black;") %>%
+      row_spec(nrow(table_age_for_kable), extra_css = "border-bottom: 1px solid black;") %>%
+      column_spec(1, bold = TRUE, border_right = TRUE, border_left = TRUE) %>%
+      column_spec(2:ncol(table_age_for_kable), border_right = TRUE, border_left = TRUE) %>%
+      HTML()
+  })
+  
+  # Render gender table
+  output$gender_table <- renderUI({
+    table_gender_for_kable %>%
+      kable(
+        format = "html",
+        caption = "Gender Distribution by Primary Diagnosis",
+        align = "c"
+      ) %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+        full_width = FALSE,
+        position = "center"
+      ) %>%
+      row_spec(0, bold = TRUE, color = "white", background = "#ADD8E6", extra_css = "border: 1px solid black;") %>%
+      row_spec(1, extra_css = "border-top: 1px solid black;") %>%
+      row_spec(nrow(table_gender_for_kable), extra_css = "border-bottom: 1px solid black;") %>%
+      column_spec(1, bold = TRUE, border_right = TRUE, border_left = TRUE) %>%
+      column_spec(2:ncol(table_gender_for_kable), border_right = TRUE, border_left = TRUE) %>%
+      HTML()
   })
 }
 
